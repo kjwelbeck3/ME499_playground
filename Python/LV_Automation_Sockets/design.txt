@@ -1,0 +1,8 @@
+A server file/process that is running on the Windows labview system
+
+Singular connection to Labview facilitated by labview_automation
+ - Launch and wait for incoming request
+ - Launched with options specifying the vi_path
+
+ - Recieves a dictionary from client which it forwards directly through to labview
+ - Forwards the indicator response to client 
