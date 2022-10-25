@@ -16,14 +16,15 @@ def run_server(vi_path, indicator_names):
 
     data = eval(conn.recv(2048).decode())
     print(data)
+    conn.send(str(data).encode())
 
-    lv = LabVIEW()
-    lv.start()
+    # lv = LabVIEW()
+    # lv.start()
 
-    with lv.client() as c:
-        indicators = c.run_vi_synchronous(vi_path, data, indicator_names=indicator_names)
+    # with lv.client() as c:
+    #     indicators = c.run_vi_synchronous(vi_path, data, indicator_names=indicator_names)
 
-    conn.send(str(indicators).encode())
+    # conn.send(str(indicators).encode())
     
 
 
