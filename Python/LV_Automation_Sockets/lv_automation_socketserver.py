@@ -14,7 +14,7 @@ def run_server(vi_path, indicator_names):
     conn, address = socket_server.accept()
     print("Connection from:  {}".format(address))
 
-    data = eval(conn.recv(1024).decode())
+    data = eval(conn.recv(2048).decode())
     print(data)
 
     lv = LabVIEW()

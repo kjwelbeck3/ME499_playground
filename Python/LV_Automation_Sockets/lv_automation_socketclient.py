@@ -83,7 +83,7 @@ def run_client(host, port):
     # post-recieve: decode then evaluate
 
     socket_client.send(str(control_values).encode())
-    data = socket_client.recv(1024).decode()
+    data = socket_client.recv(2048).decode()
 
     print(data)
 
