@@ -9,6 +9,8 @@ def run_server(vi_path, indicator_names):
 
     socket_server = socket.socket()
     socket_server.bind((host, port))
+    print("Socket name:" , socket_server.getsockname())
+
 
     socket_server.listen(1)
     conn, address = socket_server.accept()
