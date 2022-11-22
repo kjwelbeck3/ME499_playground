@@ -89,7 +89,7 @@ def run_client(host, port):
 
 
 if __name__ =="__main__":
-    host = socket.gethostname()
+    # host = socket.gethostname()
     host = "10.42.0.101"
     port = 5000
 
