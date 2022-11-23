@@ -60,7 +60,8 @@ if __name__ == "__main__":
     mask_mat = 0
 
     ## Configure client socket
-    host = socket.gethostname()
+    # host = socket.gethostname()
+    host = "10.42.0.100"
     client = ArrayControllerClient(host)
 
     ## Test sending messages
