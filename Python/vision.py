@@ -22,7 +22,6 @@ class puckTracker:
         gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
         results = self.puck_detector.detect(gray_img)
 
-        print(results)
         if len(results) == 0:
             return {}
 
@@ -44,8 +43,6 @@ class puckTracker:
             cv2.line(rgb_img, ptB, ptC, (0, 255, 0), 2)
             cv2.line(rgb_img, ptC, ptD, (0, 255, 0), 2)
             cv2.line(rgb_img, ptD, ptA, (0, 255, 0), 2)
-            # print(rgb_img)
-            print(centroid)
             cv2.circle(rgb_img, centroid, 5, (0, 0, 255), -1)
             cv2.imshow("Puck Location", rgb_img)
             cv2.waitKey(0)
@@ -56,32 +53,28 @@ class puckTracker:
         gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
         gray_img = cv2.medianBlur(gray_img, 3)
         rows = gray_img.shape[0]
-        # print(rows/60)
-        # print(rows/25)
-        # cv2.imshow("gray", gray_img)
-        # cv2.waitKey(0)
+
         circles =  cv2.HoughCircles(gray_img, cv2.HOUGH_GRADIENT, 1, rows/5,  minRadius=100, maxRadius=340)#,minRadius=20, maxRadius=100)
-        # print("circles")
-        # print(circles)
-        # print("***")
-
         if circles is not None:
-            circles = np.uint16(np.around(circles))
-            for c in circles[0, :]:
+            circles = np.uint16(np.around(circles))[0,:]
+
+            if showLoc:
+                for c in circles:
+                    center = (c[0], c[1])
+                    cv2.circle(rgb_img, center, 1, (0, 100, 100), 3)
+                    
+                    radius = c[2]
+                    cv2.circle(rgb_img, center, radius, (255, 0, 255), 3)
                 
-                center = (c[0], c[1])
-                cv2.circle(rgb_img, center, 1, (0, 100, 100), 3)
+                cv2.imshow("Detected Circles", rgb_img)
+                cv2.waitKey(0)
 
-                radius = c[2]
-                cv2.circle(rgb_img, center, radius, (255, 0, 255), 3)
+        
 
-        if showLoc:
-            cv2.imshow("Detected Circles", rgb_img)
-            cv2.waitKey(0)
+        return circles, rgb_img  ## TODO may me memory intensive to keep returing images 
 
-        return circles, rgb_img
-
-    # def locateGreenPuck()
+    # def locateGreenPuck(self):
+        # pass
 
 
     def locateStage(self, rgb_img, showTags=False):
@@ -118,23 +111,9 @@ class puckTracker:
                 cv2.line(rgb_img, ptD, ptA, (0, 255, 0), 2)
                 cv2.circle(rgb_img, centroid, 5, (0, 0, 255), -1)
 
-        # ptA = tagLocs[0]["center"]
-        # ptB = tagLocs[1]["center"]
-        # ptC = tagLocs[2]["center"]
-        # ptA, ptB, ptC = orderABC([ptA, ptB, ptC])
-        # ptD = calcD([ptA, ptB, ptC])
-
-            
-        # cv2.line(rgb_img, ptA, ptB, (255, 0, 0), 2)
-        # cv2.line(rgb_img, ptB, ptC, (255, 0, 0), 2)
-        # cv2.line(rgb_img, ptC, ptD, (255, 0, 0), 2)
-        # cv2.line(rgb_img, ptD, ptA, (255, 0, 0), 2)
-
         if showTags:
             cv2.imshow("Stage Tag Locations", rgb_img)
             cv2.waitKey(0)
-
-        # self.correctPerspective(rgb_img, [ptA, ptB, ptC, ptD])
 
         return True, tagLocs
 
@@ -156,7 +135,7 @@ class puckTracker:
         # cv2.waitKey(0)
         pass
 
-    def frameStage(self, img, tagLocs, showFramed=False):
+    def frameStage(self, img, tagLocs):
         ptA = tagLocs[0]["center"]
         ptB = tagLocs[1]["center"]
         ptC = tagLocs[2]["center"]
@@ -167,14 +146,12 @@ class puckTracker:
         cv2.line(img, ptB, ptC, (255, 0, 0), 2)
         cv2.line(img, ptC, ptD, (255, 0, 0), 2)
         cv2.line(img, ptD, ptA, (255, 0, 0), 2) 
-
-        if showFramed:
-            cv2.imshow("Framed Stage", img)
-            cv2.waitKey(0) 
+        cv2.imshow("Framed Stage", img)
+        cv2.waitKey(0) 
 
         return img, [ptA, ptB, ptC, ptD]
 
-    def framePuck(self, img, loc, showFramed=False):
+    def framePuck(self, img, loc):
         ptA, ptB, ptC, ptD = loc["corners"]
         cv2.line(img, ptA, ptB, (0, 255, 0), 2)
         cv2.line(img, ptB, ptC, (0, 255, 0), 2)
@@ -207,7 +184,57 @@ class puckTracker:
         return newImg
 
     
+    def placeGrid(self, image, x_offset, y_offset, x_divs, y_divs, showGrid=False):
+        height, width = image.shape[:2]
 
+        grid = {
+            "x": np.linspace(x_offset, width-x_offset, x_divs+1).astype(int),
+            "y": np.linspace(y_offset, height-y_offset, y_divs+1).astype(int),
+            "dx": int((width - x_offset *2)/x_divs),
+            "dy": int((height - y_offset *2)/y_divs)
+            }
+
+        if showGrid:
+            for x in grid["x"]:
+                cv2.line(image, (x, grid["y"][0]), (x,grid["y"][-1]), (255, 0, 0), 4)
+            for y in grid["y"]:
+                cv2.line(image, (grid["x"][0], y), (grid["x"][-1], y), (0, 0, 255), 4)
+
+            cv2.imshow("Gridded Stage", image)
+            cv2.waitKey(0)     
+
+        return grid, image
+
+    def locateSubgrid(self, image, grid, centroid, showSubgrid=False):
+        x_loc, y_loc = centroid
+        x_start, y_start = grid["x"][0], grid["y"][0]
+        cell_x, cell_y = int((x_loc - x_start)/grid["dx"]), int((y_loc - y_start)/grid["dy"])
+
+        subgrid_cells = {
+            "start": (max(cell_x-2, 0), max(cell_y-2, 0)),
+            "end": (min(cell_x+3, len(grid["x"])-1), min(cell_y+3, len(grid["y"])-1))
+            }
+
+        subgrid_px = {
+            "start": (grid["x"][subgrid_cells["start"][0]], grid["y"][subgrid_cells["start"][1]]),
+            "end": (grid["x"][subgrid_cells["end"][0]], grid["y"][subgrid_cells["end"][1]])
+        }
+
+        # print(subgrid_px)
+
+        # subgrid_px = {
+        #     "start": (2,2),
+        #     "end": (500,500)
+        # }
+
+        
+        
+        if showSubgrid:
+            cv2.rectangle(image, subgrid_px["start"], subgrid_px["end"], (123,123,0), 2)
+            cv2.imshow("SubGrid", image)
+            cv2.waitKey(0)
+        
+        return (cell_x, cell_y), subgrid_cells, subgrid_px, image
 
 
     def crop2Stage(self, rgb_img, showLoc):
@@ -237,12 +264,11 @@ def calcD(ordered_ptsList):
 if __name__ == "__main__":
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--image", default="/home/kjw/fall22/ME499 Research/PictureSamples/test4.png", help="path to input image containing aprilTag") #required=True
+    ap.add_argument("-i", "--image", default="/home/kjw/fall22/ME499 Research/PictureSamples/test5.png", help="path to input image containing aprilTag") #required=True
     ap.add_argument("-m", "--mode", default="puck", help="specifiy detection mode: 'stage' or 'puck'")
     args = vars(ap.parse_args())
     
     test_image = cv2.imread(args["image"])
-
 
     pT = puckTracker()    
     if args["mode"] == 'puck':
@@ -258,3 +284,19 @@ if __name__ == "__main__":
     elif args["mode"] == 'transducers':
         circles, _ = pT.locateCircles(test_image, True)
         print(circles)
+
+    elif args["mode"] == "grid-up":
+        grid, _ = pT.placeGrid(test_image, 23, 60, 12, 10, True)
+        
+    elif args["mode"] == "subgrid":
+        centroid = pT.locatePuck(test_image)
+        print(centroid["center"])
+        grid, _ = pT.placeGrid(test_image, 23, 60, 12, 10)
+        pT.framePuck(test_image, centroid)
+        cell, subgrid_cells, subgrid_px, _ = pT.locateSubgrid(test_image, grid, centroid["center"], True)
+
+        mask = np.zeros((len(grid["y"])-1, len(grid["x"])-1))
+        mask[subgrid_cells["start"][1]:subgrid_cells["end"][1], subgrid_cells["start"][0]:subgrid_cells["end"][0]] = 1
+        print(mask)
+
+        
