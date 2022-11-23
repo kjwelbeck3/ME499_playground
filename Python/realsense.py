@@ -46,12 +46,12 @@ try:
         if not perception_corrected:
             isSuccess, res = pT.locateStage(color_image,showTags=False)
             if not isSuccess:
-                print(res)
+                # print(res)
                 continue
 
             framed_image, cornerLocs = pT.frameStage(color_image, res, showFramed=False) 
             corrected_image = pT.correctPerspective(framed_image, cornerLocs, showCorrection=False, overrideTransform=True)
-            cv2.imwrite("test4.png", corrected_image)
+            # cv2.imwrite("test5.png", corrected_image)
             perception_corrected = True
             continue
 
