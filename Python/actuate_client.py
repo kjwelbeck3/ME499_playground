@@ -16,78 +16,136 @@ class ArrayControllerClient:
         self.BUFFER_SIZE = buffersize
 
         self.socket_client = socket.socket()
-        print(self.socket_client)
-        self.socket_client.connect((self.HOST, self.PORT))
+        print(f"Client Socket created : {self.socket_client}")
 
+        ## wait for socket
+        print(f"Waiting/Looking for Server Socket at {host_ip}:{host_port} ...")
+        connected = False
+        while not connected:
+            try:
+                self.socket_client.connect((self.HOST, self.PORT))
+                connected = True
+            except Exception as e:
+                pass
+        print()
 
-    def send(self, mode, content=None):
+    def send(self, mode:str, content=None):
 
         self.socket_client.send(str(mode).encode())
         ack = self.socket_client.recv(2048).decode()
-        print("ACK: {}".format(ack))
+        print("Received ack: {}".format(ack))
         if ack != mode:
             content = "[Error]: ACK does not match MODE. Not forwarding content"
             print(content)
 
         # if content:
-        expected_ack = contentCheck(content)
+        expected_ack = contentAck(content)
         self.socket_client.send(str(content).encode())
         ack = self.socket_client.recv(2048).decode()
         if ack != expected_ack:
-            resp ="[Error]: ACK does not match EXPECTED_ACK." 
+            resp = f"[Error]: ACK does not match EXPECTED_ACK. Recvd: {ack}" 
             print(resp)
-            return False, resp
+            return False, resp, expected_ack
             
-        return True, "Done"
+        return True, "Done", expected_ack
             
 
     def send_control(self,mask_mat, phase_mat, amplitude_mat):
-        pass
+        mask_str = " ".join([str(i) for i in mask_mat.flatten().tolist()])
+        phase_str = " ".join([str(i) for i in amplitude_mat.flatten().tolist()])
+        ampl_str = " ".join([str(i) for i in phase_mat.flatten().tolist()])
+        
+        # print("mask_str")
+        # print(type(mask_str))
 
+        # print("phase_str")
+        # print(type(phase_str))
+
+        # print("ampl_str")
+        # print(type(ampl_str))
+
+
+        isSuccess, resp, _ = self.send("0", mask_str)
+        if not isSuccess:
+            return False, resp
+
+        isSuccess, resp, _ = self.send("1", phase_str)
+        if not isSuccess:
+            return False, resp
+
+        isSuccess, resp, _ = self.send("2", ampl_str)
+        if not isSuccess:
+            return False, resp 
+        
+        return True, "Done"
+
+
+    def start(self):
+        pass
 
     def stop(self):
         pass
 
-def contentCheck(content):
+def contentAck(content):
     content = str(content)
-    return content[:2] + content[-2:]
+
+    try:
+        ack = str(sum([int(i) for i in content.split()]))
+    
+    except ValueError:
+
+        ack = content[:2] + content[-2:]
+
+    return ack
 
 
 if __name__ == "__main__":
 
-    amplitude_mat = 0
-    phase_mat = 0
-    mask_mat = 0
+    amplitude_mat = np.ones((5,5), dtype=int)
+    phase_mat = 15*np.ones((5,5), dtype=int)
+    mask_mat = np.zeros((10,12), dtype=int)
+    mask_mat[2:6,2:6] = 1
 
     ## Configure client socket
-    # host = socket.gethostname()
-    host = "10.42.0.100"
+    host = socket.gethostname()
+    # host = "10.42.0.100"
     client = ArrayControllerClient(host)
 
-    ## Test sending messages
-    isSuccess, resp = client.send("1", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
-    print("isSuccess: " + str(isSuccess))
-    print("resp: " + resp)
-    time.sleep(3)
+    # ## Test sending messages
+    # isSuccess, resp, expected_ack = client.send("1", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
+    # print("isSuccess: " + str(isSuccess))
+    # print("resp: " + resp)
+    # time.sleep(3)
+    # print()
     
-    isSuccess, resp = client.send("2", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
-    print("isSuccess: " + str(isSuccess))
-    print("resp: " + resp)
-    time.sleep(3)
+    # isSuccess, resp, expected_ack = client.send("2", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
+    # print("isSuccess: " + str(isSuccess))
+    # print("resp: " + resp)
+    # time.sleep(3)
+    # print()
 
-    isSuccess, resp = client.send("3", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
-    print("isSuccess: " + str(isSuccess))
-    print("resp: " + resp)
-    time.sleep(3)
+    # isSuccess, resp, expected_ack = client.send("3", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
+    # print("isSuccess: " + str(isSuccess))
+    # print("resp: " + resp)
+    # time.sleep(3)
+    # print()
 
-    isSuccess, resp = client.send("0", "noneonoe")
-    print("isSuccess: " + str(isSuccess))
-    print("resp: " + resp)
-    time.sleep(3)
+    # isSuccess, resp, expected_ack = client.send("0", "2 6 2 6")
+    # print("isSuccess: " + str(isSuccess))
+    # print("resp: " + resp)
+    # time.sleep(3)
+    # print()
 
-    isSuccess, resp = client.send("Z", "Recvd SHUTDOWN")
+    isSuccess, resp = client.send_control(mask_mat, phase_mat, amplitude_mat)
     print("isSuccess: " + str(isSuccess))
     print("resp: " + resp)
+    print()
+
+    isSuccess, resp, expected_ack = client.send("Z", "SHUTDOWN")
+    print("isSuccess: " + str(isSuccess))
+    print("resp: " + resp)
+    print("expected_ack: " + expected_ack)
+    print()
 
 
 

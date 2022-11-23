@@ -7,7 +7,7 @@
 
 import numpy as np
 import socket
-from actuate_client import contentCheck
+from actuate_client import contentAck
 
 class ArrayControllerServer:
     
@@ -25,7 +25,7 @@ class ArrayControllerServer:
 
         self.server_socket = socket.socket()
         self.server_socket.bind((self.HOST, self.PORT))
-        print("Server Socket established: {}".format(self.server_socket.getsockname))
+        print("Server Socket established: {}".format(self.server_socket.getsockname()))
 
         self.server_socket.listen(1)
         self.connection, self.client_address = self.server_socket.accept()
@@ -33,8 +33,6 @@ class ArrayControllerServer:
 
 
     def recv(self):
-
-        content = None
         
         mode = self.connection.recv(self.BUFFER_SIZE).decode()
         print("Recvd mode : {}".format(mode))
@@ -44,7 +42,7 @@ class ArrayControllerServer:
         content = self.connection.recv(self.BUFFER_SIZE).decode()
 
         print("Recvd content : {}".format(content))
-        ack = self.process_content(mode, content)
+        success, ack = self.process_content(mode, content)
         self.connection.send(ack.encode())
 
         return mode, content, ack
@@ -58,7 +56,44 @@ class ArrayControllerServer:
         # check for error then unpack based on mode
         # generate and return checksum
 
-        return contentCheck(content)
+        if not content:
+            return False, "Expected truthy content."
+
+        if mode == "00":
+            try:
+                y_start, y_end, x_start, x_end = [int(i) for i in content.split()]
+                self.mask_mat = np.zeros((10, 12))
+                self.mask_mat[y_start:y_end, x_start:x_end] = 1
+            except ValueError:
+                return False, f"Expected string of exactly 4 whitespace-separated numbers"
+
+        if mode == "0":
+            try:
+                phase_list = [int(i) for i in content.split()]
+                self.phase_mat = np.array(phase_list, dtype=np.int16).reshape((10,12))
+            except ValueError:
+                return False, f"Expected string of exactly 120 whitespace-separated numbers"
+
+        if mode == "1":
+            try:
+                phase_list = [int(i) for i in content.split()]
+                self.phase_mat = np.array(phase_list, dtype=np.int16).reshape((5,5))
+            except ValueError:
+                return False, f"Expected string of exactly 25 whitespace-separated numbers"
+
+            
+        if mode == "2":
+            try:
+                ampl_list = [int(i) for i in content.split()]
+                self.ampl_mat = np.array(ampl_list, dtype=np.int16).reshape((5,5))
+            except ValueError:
+                return False, f"Expected string of exactly 25 whitespace-separated numbers"
+
+        return True, contentAck(content)
+
+
+    def updateControls(self):
+        pass
 
     def shutdown(self):
         self.server_socket.close()
@@ -74,29 +109,22 @@ if __name__ == "__main__":
     # Configure server socket
     server = ArrayControllerServer(0)
 
-    
     try:
-        while run:
+        while run:  ## TODO Reimplement as event based with an event loop --> aysncio
+
             # Test incomming socket messages
-        
             mode, content, ack = server.recv()
-            print("mode: " + mode)
-            print("content: " + content)
-            print("ack: " + ack)
+            print("sending ack: " + ack)
+            print()
 
             if str(mode) == "Z":
                 print("Shutting down ...")
                 run = False
-                server.shutdown()
-                
+                server.shutdown()    
 
     except KeyboardInterrupt:
         print("Shutting down ...")
         server.shutdown()
-
-    # except:
-    #     print("Non-KeyboardInterrupt exception")
-        
     
     finally:
         exit(0)
