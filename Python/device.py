@@ -56,8 +56,8 @@ class DeviceManager:
         control_vals = mask_controls[mask>0]
         control_dict = {}
         for i,v in enumerate(control_idxs):
-            control_dict[dictionary_prefix + str(v)] = control_vals[i]
-            print(i, v, control_vals[i])
+            control_dict[dictionary_prefix + str(v)] = float(control_vals[i])
+            # print(i, v, control_vals[i])
         
         return control_dict
 
@@ -108,7 +108,8 @@ if __name__ == "__main__":
     device.forwardControlDict(phase_control_dict)
 
     amplitude_control_dict = device.genControlDict(test_mask, test_amplitude_mat, "amplitude ")
-    device.forwardControlDict(amplitude_control_dict)
+    resp = device.forwardControlDict(amplitude_control_dict)
+    print(resp)
 
     while True:
         try:
