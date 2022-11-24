@@ -8,20 +8,23 @@
 import numpy as np
 import socket
 from actuate_client import contentAck
+import device
 
 class ArrayControllerServer:
     
     def __init__(self, VI, mappingConfig=None):
 
-        self.amplitude_mat = None
+        self.ampl_mat = None
         self.phase_mat = None
         self.mask_mat = None
-        self.mappingConfig = None
+        self.phase_control_dict
+        self.ampl_control_dict
+
+        self.device = device.DeviceManager()
 
         self.HOST = socket.gethostname()
         self.PORT = 5005
         self.BUFFER_SIZE = 2048
-
 
         self.server_socket = socket.socket()
         self.server_socket.bind((self.HOST, self.PORT))
@@ -47,10 +50,6 @@ class ArrayControllerServer:
 
         return mode, content, ack
 
-    def command_VI(self):
-        pass
-
-
     def process_content(self,mode, content):
 
         # check for error then unpack based on mode
@@ -69,8 +68,10 @@ class ArrayControllerServer:
 
         if mode == "0":
             try:
-                phase_list = [int(i) for i in content.split()]
-                self.phase_mat = np.array(phase_list, dtype=np.int16).reshape((10,12))
+                mask_list = [int(i) for i in content.split()]
+                self.mask_mat = np.array(mask_list, dtype=np.int16).reshape((10,12))
+                self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "p ")
+                self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "a ")
             except ValueError:
                 return False, f"Expected string of exactly 120 whitespace-separated numbers"
 
@@ -78,6 +79,7 @@ class ArrayControllerServer:
             try:
                 phase_list = [int(i) for i in content.split()]
                 self.phase_mat = np.array(phase_list, dtype=np.int16).reshape((5,5))
+                self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "p ")
             except ValueError:
                 return False, f"Expected string of exactly 25 whitespace-separated numbers"
 
@@ -86,14 +88,44 @@ class ArrayControllerServer:
             try:
                 ampl_list = [int(i) for i in content.split()]
                 self.ampl_mat = np.array(ampl_list, dtype=np.int16).reshape((5,5))
+                self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "a ")
             except ValueError:
                 return False, f"Expected string of exactly 25 whitespace-separated numbers"
+                
 
         return True, contentAck(content)
 
 
-    def updateControls(self):
-        pass
+    # def updateControls(self):
+    #     """ Generate control dictionary """
+
+    #     self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "p ")
+    #     self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "a ")
+    #     pass
+
+    def command_VI(self, command=None):
+        # if command == "start":
+        #     pass ## send the start command
+
+        if command == "stop":
+            pass ## send the stop command
+
+        if command == "phase":
+            resp = self.device.forwardControlDict(self.phase_control_dict)
+
+
+        if command == "amplitude":
+            resp = self.device.forwardControlDict(self.ampl_control_dict)
+
+        if command == "all":
+            ampls_and_phases = {} 
+            ampls_and_phases.update(self.ampl_control_dict) 
+            ampls_and_phases.update(self.phase_control_dict)
+
+            resp = self.device.forwardControlDict(ampls_and_phases)
+
+        return resp
+
 
     def shutdown(self):
         self.server_socket.close()
@@ -121,6 +153,13 @@ if __name__ == "__main__":
                 print("Shutting down ...")
                 run = False
                 server.shutdown()    
+            
+            if str(mode) == "Y":
+                server.command_VI("start")
+
+            if str(mode) == "N":
+                server.command_VI("stop")
+
 
     except KeyboardInterrupt:
         print("Shutting down ...")
