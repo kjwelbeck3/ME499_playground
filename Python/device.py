@@ -101,8 +101,8 @@ if __name__ == "__main__":
     device = DeviceManager()
     
     test_mask = maskFromCentroid()
-    test_phase_mat = np.ones((5,5), dtype=int)*15
-    test_amplitude_mat = np.ones((5,5), dtype=int)*0.5
+    test_phase_mat = np.ones((5,5), dtype=float)*15
+    test_amplitude_mat = np.ones((5,5), dtype=float)*0.5
 
     phase_control_dict = device.genControlDict(test_mask, test_phase_mat, "phase ")
     device.forwardControlDict(phase_control_dict)
@@ -111,8 +111,8 @@ if __name__ == "__main__":
     resp = device.forwardControlDict(amplitude_control_dict)
     print(resp)
 
-    while True:
-        try:
-            continue
-        except KeyboardInterrupt:
-            exit()
+    # while True:
+    #     try:
+    #         time.sleep(1)
+    #     except KeyboardInterrupt:
+    #         exit()
