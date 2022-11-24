@@ -7,7 +7,7 @@ class DeviceManager:
         
         self.labview = LabVIEW()
         self.labview.start()
-        self.labviewClient = self.labview.client()
+        # self.labviewClient = self.labview.client()
         self.vi_path = vi_path
         
         self.mapping = self.genMapping()
@@ -62,7 +62,11 @@ class DeviceManager:
         return control_dict
 
     def forwardControlDict(self, control_dict):
-        resp = self.labviewClient.run_vi_synchronous(self.vi_path, control_dict)
+        resp = None
+        with self.labview.client() as c:
+            resp = c.run_vi_synchronous(self.vi_path, control_dict)
+
+        return resp
         ## might have to create a new client each time
 
     def start(self):
@@ -100,10 +104,10 @@ if __name__ == "__main__":
     test_phase_mat = np.ones((5,5), dtype=int)*15
     test_amplitude_mat = np.ones((5,5), dtype=int)*0.5
 
-    phase_control_dict = device.genControlDict(test_mask, test_phase_mat, "p ")
+    phase_control_dict = device.genControlDict(test_mask, test_phase_mat, "phase ")
     device.forwardControlDict(phase_control_dict)
 
-    amplitude_control_dict = device.genControlDict(test_mask, test_amplitude_mat, "a ")
+    amplitude_control_dict = device.genControlDict(test_mask, test_amplitude_mat, "amplitude ")
     device.forwardControlDict(amplitude_control_dict)
 
     while True:
