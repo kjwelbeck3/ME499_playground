@@ -40,12 +40,20 @@ class ArrayControllerClient:
 
         # if content:
         expected_ack = contentAck(content)
+
         self.socket_client.send(str(content).encode())
         ack = self.socket_client.recv(2048).decode()
-        if ack != expected_ack:
-            resp = f"[Error]: ACK does not match EXPECTED_ACK. Recvd: {ack}" 
-            print(resp)
-            return False, resp, expected_ack
+        # print("ack")
+        # print(ack)
+        # print(type(ack))
+
+        # print("expected_ack")
+        # print(expected_ack)
+        # print(type(expected_ack))
+        # if ack != expected_ack:
+        #     resp = f"[Error]: ACK does not match EXPECTED_ACK. Recvd: {ack}" 
+        #     print(resp)
+        #     return False, resp, expected_ack
             
         return True, "Done", expected_ack
             
@@ -80,11 +88,13 @@ class ArrayControllerClient:
         return True, "Done"
 
 
-    def start(self):
-        pass
+    def send_start(self):
+        isSuccess, resp, _ = self.send("Y", "START")
+        return isSuccess, resp
 
-    def stop(self):
-        pass
+    def send_stop(self):
+        isSuccess, resp, _ = self.send("N", "STOP")
+        return isSuccess, resp
 
 def contentAck(content):
     content = str(content)
@@ -107,16 +117,16 @@ if __name__ == "__main__":
     mask_mat[2:6,2:6] = 1
 
     ## Configure client socket
-    host = socket.gethostname()
-    # host = "10.42.0.100"
+    # host = socket.gethostname()
+    host = "10.42.0.100"
     client = ArrayControllerClient(host)
 
-    # ## Test sending messages
-    # isSuccess, resp, expected_ack = client.send("1", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
-    # print("isSuccess: " + str(isSuccess))
-    # print("resp: " + resp)
-    # time.sleep(3)
-    # print()
+    ## Test sending messages
+    isSuccess, resp, expected_ack = client.send("1", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5 9 9 7 6 5 9 9 7 6 5")
+    print("isSuccess: " + str(isSuccess))
+    print("resp: " + resp)
+    time.sleep(3)
+    print()
     
     # isSuccess, resp, expected_ack = client.send("2", "1 2 3 4 5 6 6 7 8 8 9 9 7 6 5")
     # print("isSuccess: " + str(isSuccess))
@@ -136,16 +146,16 @@ if __name__ == "__main__":
     # time.sleep(3)
     # print()
 
-    isSuccess, resp = client.send_control(mask_mat, phase_mat, amplitude_mat)
-    print("isSuccess: " + str(isSuccess))
-    print("resp: " + resp)
-    print()
+    # isSuccess, resp = client.send_control(mask_mat, phase_mat, amplitude_mat)
+    # print("isSuccess: " + str(isSuccess))
+    # print("resp: " + resp)
+    # print()
 
-    isSuccess, resp, expected_ack = client.send("Z", "SHUTDOWN")
-    print("isSuccess: " + str(isSuccess))
-    print("resp: " + resp)
-    print("expected_ack: " + expected_ack)
-    print()
+    # isSuccess, resp, expected_ack = client.send("Z", "SHUTDOWN")
+    # print("isSuccess: " + str(isSuccess))
+    # print("resp: " + resp)
+    # print("expected_ack: " + expected_ack)
+    # print()
 
 
 
