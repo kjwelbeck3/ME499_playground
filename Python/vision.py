@@ -135,7 +135,7 @@ class puckTracker:
         # cv2.waitKey(0)
         pass
 
-    def frameStage(self, img, tagLocs):
+    def frameStage(self, img, tagLocs, showFramed=False):
         ptA = tagLocs[0]["center"]
         ptB = tagLocs[1]["center"]
         ptC = tagLocs[2]["center"]
@@ -146,8 +146,9 @@ class puckTracker:
         cv2.line(img, ptB, ptC, (255, 0, 0), 2)
         cv2.line(img, ptC, ptD, (255, 0, 0), 2)
         cv2.line(img, ptD, ptA, (255, 0, 0), 2) 
-        cv2.imshow("Framed Stage", img)
-        cv2.waitKey(0) 
+        if showFramed:
+            cv2.imshow("Framed Stage", img)
+            cv2.waitKey(0) 
 
         return img, [ptA, ptB, ptC, ptD]
 
@@ -236,6 +237,16 @@ class puckTracker:
         
         return (cell_x, cell_y), subgrid_cells, subgrid_px, image
 
+    def getMaskMatFromCentroid(self, img, centroid, showSubGrid=False):
+        grid, _ = self.placeGrid(img, 23, 60, 12, 10)
+        # self.framePuck(test_image, {"center", centroid})
+        cell, subgrid_cells, subgrid_px, _ = self.locateSubgrid(img, grid, centroid, showSubGrid)
+
+        mask = np.zeros((len(grid["y"])-1, len(grid["x"])-1))
+        mask[subgrid_cells["start"][1]:subgrid_cells["end"][1], subgrid_cells["start"][0]:subgrid_cells["end"][0]] = 1
+        # print(mask)
+
+        return mask, cell, subgrid_cells, subgrid_px
 
     def crop2Stage(self, rgb_img, showLoc):
         pass
@@ -297,6 +308,11 @@ if __name__ == "__main__":
 
         mask = np.zeros((len(grid["y"])-1, len(grid["x"])-1))
         mask[subgrid_cells["start"][1]:subgrid_cells["end"][1], subgrid_cells["start"][0]:subgrid_cells["end"][0]] = 1
+        print(mask)
+
+    elif args["mode"] == "mask":
+        puck = pT.locatePuck(test_image)
+        mask, cell, subgrid_cells, subgrid_px = pT.getMaskMatFromCentroid(test_image, puck["center"], True)
         print(mask)
 
         
