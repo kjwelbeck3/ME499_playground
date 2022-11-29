@@ -1,11 +1,12 @@
+from cmath import phase
 from labview_automation import LabVIEW
 import numpy as np
 import random
 
 class DeviceManager:
 
-    def __init__(self, vi_path=r"C:\Users\Ping Guo\Documents\onedrive_backup\OneDrive - Northwestern University\Desktop\KojoWelbeck\ProjectEnvironment\NI VIs\Test1.vi"):
     # def __init__(self, vi_path=r"C:\Users\Ping Guo\Documents\onedrive_backup\OneDrive - Northwestern University\Desktop\KojoWelbeck\ProjectEnvironment\Python\playground\30ControlsToIndicators.vi"):
+    def __init__(self, vi_path=r"C:\Users\Ping Guo\Documents\onedrive_backup\OneDrive - Northwestern University\Desktop\KojoWelbeck\ProjectEnvironment\NI VIs\Test1.vi"):
         
         self.labview = LabVIEW()
         self.labview.start()
@@ -41,6 +42,12 @@ class DeviceManager:
 
         return mapping
 
+    def genResetControl(self, dictionary_prefix=""):
+        _dict = {}
+        for i in range (1,33):
+            _dict[dictionary_prefix+str(i)] = 0
+        return _dict
+
     def genControlDict(self, mask, control, dictionary_prefix=""):
         ## Should verify mask and control size matches 
 
@@ -56,7 +63,7 @@ class DeviceManager:
         ## Combine into a control dict
         control_idxs = mask_map[mask>0]
         control_vals = mask_controls[mask>0]
-        control_dict = {}
+        control_dict = self.genResetControl(dictionary_prefix)
         for i,v in enumerate(control_idxs):
             control_dict[dictionary_prefix + str(v)] = float(control_vals[i])
             # print(i, v, control_vals[i])
@@ -103,14 +110,18 @@ if __name__ == "__main__":
     device = DeviceManager()
     
     test_mask = maskFromCentroid()
-    test_phase_mat = np.ones((5,5), dtype=float)*random.randint(0,200)
-    test_amplitude_mat = np.ones((5,5), dtype=float)*1
+    # test_phase_mat = np.ones((5,5), dtype=float)*random.randint(0,200)
+    test_phase_mat = np.random.randint(0, 359, (5,5))
+    test_amplitude_mat = np.ones((5,5), dtype=float)*5
 
     phase_control_dict = device.genControlDict(test_mask, test_phase_mat, "phase ")
+    print(phase_control_dict)
     resp = device.forwardControlDict(phase_control_dict)
     print(resp)
 
     amplitude_control_dict = device.genControlDict(test_mask, test_amplitude_mat, "amplitude ")
+    amplitude_control_dict.update(phase_control_dict)
+    print(amplitude_control_dict)
     resp = device.forwardControlDict(amplitude_control_dict)
     print(resp)
 

@@ -17,8 +17,8 @@ class ArrayControllerServer:
         self.ampl_mat = None
         self.phase_mat = None
         self.mask_mat = None
-        self.phase_control_dict
-        self.ampl_control_dict
+        self.phase_control_dict = None
+        self.ampl_control_dict = None
 
         self.device = device.DeviceManager()
 
@@ -70,8 +70,8 @@ class ArrayControllerServer:
             try:
                 mask_list = [int(i) for i in content.split()]
                 self.mask_mat = np.array(mask_list, dtype=np.int16).reshape((10,12))
-                self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "p ")
-                self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "a ")
+                self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "phase ")
+                self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "amplitude ")
             except ValueError:
                 return False, f"Expected string of exactly 120 whitespace-separated numbers"
 
@@ -79,7 +79,7 @@ class ArrayControllerServer:
             try:
                 phase_list = [int(i) for i in content.split()]
                 self.phase_mat = np.array(phase_list, dtype=np.int16).reshape((5,5))
-                self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "p ")
+                self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "phase ")
             except ValueError:
                 return False, f"Expected string of exactly 25 whitespace-separated numbers"
 
@@ -88,7 +88,7 @@ class ArrayControllerServer:
             try:
                 ampl_list = [int(i) for i in content.split()]
                 self.ampl_mat = np.array(ampl_list, dtype=np.int16).reshape((5,5))
-                self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "a ")
+                self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "amplitude ")
             except ValueError:
                 return False, f"Expected string of exactly 25 whitespace-separated numbers"
                 
@@ -104,11 +104,16 @@ class ArrayControllerServer:
     #     pass
 
     def command_VI(self, command=None):
+
+        resp = None
         # if command == "start":
         #     pass ## send the start command
 
         if command == "stop":
-            pass ## send the stop command
+            ampls_and_phases = device.genResetControl("amplitude ")
+            ampls_and_phases.update(device.genResetControl("phase "))
+
+            resp = self.device.forwardControlDict(ampls_and_phases)
 
         if command == "phase":
             resp = self.device.forwardControlDict(self.phase_control_dict)
@@ -117,12 +122,16 @@ class ArrayControllerServer:
         if command == "amplitude":
             resp = self.device.forwardControlDict(self.ampl_control_dict)
 
-        if command == "all":
+        if command == "start":
             ampls_and_phases = {} 
             ampls_and_phases.update(self.ampl_control_dict) 
             ampls_and_phases.update(self.phase_control_dict)
 
             resp = self.device.forwardControlDict(ampls_and_phases)
+
+        if command == "close":
+            
+            pass
 
         return resp
 
