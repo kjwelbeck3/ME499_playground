@@ -14,13 +14,15 @@ class ArrayControllerServer:
     
     def __init__(self, VI, mappingConfig=None):
 
-        self.ampl_mat = None
-        self.phase_mat = None
-        self.mask_mat = None
+        self.ampl_mat = np.zeros((5,5))
+        self.phase_mat = np.zeros((5,5))
+        # self.mask_mat = np.zeros((10,12))
+        self.mask_mat = device.maskFromCentroid()
+
         self.phase_control_dict = None
         self.ampl_control_dict = None
 
-        self.device = device.DeviceManager()
+        self.device = device.DeviceManager(False)
 
         self.HOST = socket.gethostname()
         self.PORT = 5005
@@ -55,8 +57,8 @@ class ArrayControllerServer:
         # check for error then unpack based on mode
         # generate and return checksum
 
-        if not content:
-            return False, "Expected truthy content."
+        # if not content:
+        #     return False, "Expected truthy content."
 
         if mode == "00":
             try:
@@ -70,27 +72,47 @@ class ArrayControllerServer:
             try:
                 mask_list = [int(i) for i in content.split()]
                 self.mask_mat = np.array(mask_list, dtype=np.int16).reshape((10,12))
+                print("self.mask_mat")
+                print(self.mask_mat)
                 self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "phase ")
                 self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "amplitude ")
-            except ValueError:
-                return False, f"Expected string of exactly 120 whitespace-separated numbers"
+            # except ValueError:
+            #     return False, f"Expected string of exactly 120 whitespace-separated numbers"
+            finally:
+                print("in finally of mode 0")
 
         if mode == "1":
             try:
                 phase_list = [int(i) for i in content.split()]
                 self.phase_mat = np.array(phase_list, dtype=np.int16).reshape((5,5))
+                print("self.phase_mat")
+                print(self.phase_mat)
+                print()
+                print('self.mask_mat')
+                print(self.mask_mat)
+                print()
                 self.phase_control_dict = self.device.genControlDict(self.mask_mat, self.phase_mat, "phase ")
-            except ValueError:
-                return False, f"Expected string of exactly 25 whitespace-separated numbers"
+            # except ValueError:
+                # return False, f"Expected string of exactly 25 whitespace-separated numbers"
+            finally:
+                print("in finally of mode 1")
 
             
         if mode == "2":
             try:
                 ampl_list = [int(i) for i in content.split()]
                 self.ampl_mat = np.array(ampl_list, dtype=np.int16).reshape((5,5))
+                print("self.ampl_mat")
+                print(self.ampl_mat)
+                print()
+                print('self.mask_mat')
+                print(self.mask_mat)
+                print()
                 self.ampl_control_dict = self.device.genControlDict(self.mask_mat, self.ampl_mat, "amplitude ")
-            except ValueError:
-                return False, f"Expected string of exactly 25 whitespace-separated numbers"
+            # except ValueError:
+            #     return False, f"Expected string of exactly 25 whitespace-separated numbers"
+            finally:
+                print("in finally of mode 0")
                 
 
         return True, contentAck(content)
@@ -150,9 +172,11 @@ if __name__ == "__main__":
     # Configure server socket
     server = ArrayControllerServer(0)
 
-    try:
-        while run:  ## TODO Reimplement as event based with an event loop --> aysncio
+    # try:
+        # while run:  ## TODO Reimplement as event based with an event loop --> aysncio
+    while True:
 
+        try:
             # Test incomming socket messages
             mode, content, ack = server.recv()
             print("sending ack: " + ack)
@@ -170,12 +194,15 @@ if __name__ == "__main__":
                 server.command_VI("stop")
 
 
-    except KeyboardInterrupt:
-        print("Shutting down ...")
-        server.shutdown()
+        except KeyboardInterrupt:
+            print("Shutting down ...")
+            server.shutdown()
     
-    finally:
-        exit(0)
+    # exit(0)
+    
+    # finally:
+    #     print("finally")
+    #     exit(0)
 
 
         
