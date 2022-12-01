@@ -6,11 +6,13 @@ import random
 class DeviceManager:
 
     # def __init__(self, vi_path=r"C:\Users\Ping Guo\Documents\onedrive_backup\OneDrive - Northwestern University\Desktop\KojoWelbeck\ProjectEnvironment\Python\playground\30ControlsToIndicators.vi"):
-    def __init__(self, vi_path=r"C:\Users\Ping Guo\Documents\onedrive_backup\OneDrive - Northwestern University\Desktop\KojoWelbeck\ProjectEnvironment\NI VIs\Test1.vi"):
+    def __init__(self, connect_to_labview = True, vi_path=r"C:\Users\Ping Guo\Documents\onedrive_backup\OneDrive - Northwestern University\Desktop\KojoWelbeck\ProjectEnvironment\NI VIs\Test1.vi"):
         
-        self.labview = LabVIEW()
-        self.labview.start()
-        # self.labviewClient = self.labview.client()
+        self.connect = connect_to_labview
+        if self.connect:
+            self.labview = LabVIEW()
+            self.labview.start()
+            # self.labviewClient = self.labview.client()
         self.vi_path = vi_path
         
         self.mapping = self.genMapping()
@@ -71,11 +73,13 @@ class DeviceManager:
         return control_dict
 
     def forwardControlDict(self, control_dict):
-        resp = None
-        with self.labview.client() as c:
-            resp = c.run_vi_synchronous(self.vi_path, control_dict)
+        if self.connect:
+            resp = None
+            with self.labview.client() as c:
+                resp = c.run_vi_synchronous(self.vi_path, control_dict)
 
-        return resp
+            return resp
+        return "This DeviceManager instance was initialized without connection to labview."
         ## might have to create a new client each time
 
     def start(self):
@@ -86,8 +90,11 @@ class DeviceManager:
         pass
 
     def shutdown(self):
-        ## might have to stop/decommish the self.labviewClient
-        self.labview.stop()
+        if self.connect:
+            ## might have to stop/decommish the self.labviewClient
+            self.labview.stop()
+        else:
+            print("This DeviceManager instance was initialized without connection to labview.")
 
 def maskFromCentroid(shape=(10,12), centroid=(4,5), mask_width=5):
     from math import floor, ceil
@@ -107,23 +114,42 @@ def maskFromCentroid(shape=(10,12), centroid=(4,5), mask_width=5):
 
 if __name__ == "__main__":
     
-    device = DeviceManager()
+    device = DeviceManager(False)
     
     test_mask = maskFromCentroid()
+    print("test_mask")
+    print(test_mask)
+    print()
+
     # test_phase_mat = np.ones((5,5), dtype=float)*random.randint(0,200)
     test_phase_mat = np.random.randint(0, 359, (5,5))
+    print("test_phase_mat")
+    print(test_phase_mat)
+    print()
+
     test_amplitude_mat = np.ones((5,5), dtype=float)*5
+    print("test_amplitude_mat")
+    print(test_amplitude_mat)
+    print()
 
     phase_control_dict = device.genControlDict(test_mask, test_phase_mat, "phase ")
+    print("phase_control_dict")
     print(phase_control_dict)
+    print()
     resp = device.forwardControlDict(phase_control_dict)
+    print("phase____resp")
     print(resp)
+    print()
 
     amplitude_control_dict = device.genControlDict(test_mask, test_amplitude_mat, "amplitude ")
     amplitude_control_dict.update(phase_control_dict)
+    print("amplitude_control_dict")
     print(amplitude_control_dict)
+    print()
     resp = device.forwardControlDict(amplitude_control_dict)
+    print("amplitude___resp")
     print(resp)
+    print()
 
     # while True:
     #     try:
