@@ -10,15 +10,16 @@ import time
 
 
 class DataCollector:
-    def __init__(self, actuator_host="10.42.0.100", filename="samples.csv") -> None:
+    def __init__(self, actuator_host="10.42.0.100", filename="samples.csv", tag_size=0.02922) -> None:
         self.filename = filename
         
-        # ## Configure Actuator Client
-        # self.actuator_client = actuate_client.ArrayControllerClient(actuator_host)
+        ## Configure Actuator Client
+        self.actuator_client = actuate_client.ArrayControllerClient(actuator_host)
 
         # Configure puck and stage tracking
         self.pT = vision.puckTracker()
         self.perception_corrected = False
+        self.tag_size = tag_size
 
         # Configure color streams
         self.setupStream()
@@ -48,7 +49,13 @@ class DataCollector:
         config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
 
         # Start streaming
-        self.pipeline.start(config)
+        cfg = self.pipeline.start(config)
+        profile = cfg.get_stream(rs.stream.color)
+        intr = profile.as_video_stream_profile().get_intrinsics()
+        # print(intr)
+        # print(intr.ppx)
+
+        self.camera_params=(intr.fx, intr.fy, intr.ppx, intr.ppy)
 
         try:
             while not self.perception_corrected:
@@ -97,7 +104,8 @@ class DataCollector:
                 corrected_image = self.pT.correctPerspective(color_image)
 
                 # Locate the puck's apriltag 
-                puckLoc = self.pT.locatePuck(corrected_image)
+                puckLoc = self.pT.locatePuck(corrected_image,camera_params=self.camera_params,tag_size=self.tag_size )
+                self.pT.framePuck(corrected_image, puckLoc)
                 if not puckLoc.get("center",None):
                     continue
 
@@ -105,12 +113,13 @@ class DataCollector:
         finally:
             self.pipeline.stop()
 
-        return puckLoc["center"], corrected_image
+        return puckLoc["center"], puckLoc["corners"], corrected_image
 
     def recordPuck(self):
         
         self.timestamps = []
         self.pixel_locs = []
+        self.thetas = []
         timestamp = None
         self.pipeline.start()
         try:
@@ -133,13 +142,14 @@ class DataCollector:
                 corrected_image = self.pT.correctPerspective(color_image)
 
                 # Locate the puck's apriltag 
-                puckLoc = self.pT.locatePuck(corrected_image)
+                puckLoc = self.pT.locatePuck(corrected_image, camera_params=self.camera_params, tag_size=self.tag_size)
                 if not puckLoc.get("center",None):
                     continue
                 
                 # Save data sample
                 self.timestamps.append(str(timestamp))
                 self.pixel_locs.append(puckLoc.get("center"))
+                self.thetas.append(puckLoc.get("yaw"))
         finally:
             self.pipeline.stop()
 
@@ -170,10 +180,11 @@ class DataCollector:
 
 
 
-    def runOnce(self, phase_mat=np.zeros((5,5)), ampl_mat=np.ones((5,5))*1, showSubGrid=False):
+    def runOnce(self, phase_mat=np.zeros((5,5), dtype=int), ampl_mat=4*np.ones((5,5), dtype=int)*1, secs=2, showSubGrid=False):
         """Find puck loc, Start recording, actuate for spec'd time, stop recording, save recording"""
         
-        centroid, img = self._locatePuck()#[0]["center"]
+        centroid, corners,img = self._locatePuck()#[0]["center"]
+        
         mask, cell, subgrid_cells, subgrid_px = self.pT.getMaskMatFromCentroid(img, centroid, showSubGrid)
         print("centroid")
         print(centroid)
@@ -190,20 +201,21 @@ class DataCollector:
         thread.start()
 
         # ## Actuate array and wait for spec'd seconds
-        # isSuccess, resp = self.actuator_client.send_control(mask, phase_mat, ampl_mat)
-        # print(isSuccess)
-        # print(resp)
+        isSuccess, resp = self.actuator_client.send_control(mask, phase_mat, ampl_mat)
+        print(isSuccess)
+        print(resp)
 
-        # isSuccess, resp = self.actuator_client.send_start()
-        # print(isSuccess)
-        # print(resp)
+        isSuccess, resp = self.actuator_client.send_start()
+        print(isSuccess)
+        print(resp)
 
-        time.sleep(2)
+        print(f"sleeping for {secs}")
+        time.sleep(secs)
         # isSuccess, resp = self.actuator_client.send_control(mask, np.zeros((5,5)), np.zeros((5,5)))
 
-        # isSuccess, resp = self.actuator_client.send_stop()
-        # print(isSuccess)
-        # print(resp)
+        isSuccess, resp = self.actuator_client.send_stop()
+        print(isSuccess)
+        print(resp)
 
         __, msg = self.stopRecord()
         print(msg)
@@ -213,8 +225,11 @@ class DataCollector:
 
 
 if __name__ == "__main__":
+    np.random.seed(1)
     dc = DataCollector("10.42.0.100")
     print("setting up stream")
     dc.setupStream()
     print("running once")
-    dc.runOnce(showSubGrid=True)
+    mat = np.random.randint(0,359, (5,5))
+    # print(mat)
+    dc.runOnce(mat, showSubGrid=True)

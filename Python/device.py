@@ -116,7 +116,7 @@ if __name__ == "__main__":
     
     device = DeviceManager(False)
     
-    test_mask = maskFromCentroid()
+    test_mask = maskFromCentroid(centroid=(1,5))
     print("test_mask")
     print(test_mask)
     print()

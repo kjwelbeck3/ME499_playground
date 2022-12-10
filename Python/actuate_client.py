@@ -61,17 +61,20 @@ class ArrayControllerClient:
 
     def send_control(self,mask_mat, phase_mat, amplitude_mat):
         mask_str = " ".join([str(i) for i in mask_mat.flatten().tolist()])
-        phase_str = " ".join([str(i) for i in amplitude_mat.flatten().tolist()])
-        ampl_str = " ".join([str(i) for i in phase_mat.flatten().tolist()])
+        ampl_str = " ".join([str(i) for i in amplitude_mat.flatten().tolist()])
+        phase_str = " ".join([str(i) for i in phase_mat.flatten().tolist()])
         
-        # print("mask_str")
-        # print(type(mask_str))
+        print("mask_str")
+        print(mask_str)
+        print(type(mask_str))
 
-        # print("phase_str")
-        # print(type(phase_str))
+        print("phase_str")
+        print(phase_str)
+        print(type(phase_str))
 
-        # print("ampl_str")
-        # print(type(ampl_str))
+        print("ampl_str")
+        print(ampl_str)
+        print(type(ampl_str))
 
 
         isSuccess, resp, _ = self.send("0", mask_str)
@@ -118,8 +121,8 @@ if __name__ == "__main__":
     mask_mat[2:7,2:7] = 1
 
     ## Configure client socket
-    host = socket.gethostname()
-    # host = "10.42.0.100"
+    # host = socket.gethostname()
+    host = "10.42.0.100"
     client = ArrayControllerClient(host)
 
     ## Test sending messages
