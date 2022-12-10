@@ -39,7 +39,7 @@ The “controller” refers to parts of the setup responsible for the vision and
 - - with a fiducial marker centered on top face - for detection and tracking
 
 ![NI and Pieze Drive equipment](media/NIandPiezoDrive.png)
-![Stage](media/Stage.png =50x)
+![Stage](media/Stage.png)
 
 
 ### [Optional] Automated Centering Attachment [-not-pictured]
@@ -52,29 +52,27 @@ It is complete with
 
 ## Configuration Instructions
 ### Wireless Comms
-Connect both device-side and controller side computers to the same subnet on the same local network. Internet access may be required for LabVIEW authentication.
-Note the device-side computer’s ip address. This will need to be specified on the controller-side launch to enable communication.
+1. Connect both device-side and controller side computers to the same subnet on the same local network. Internet access may be required for LabVIEW authentication. Note the device-side computer’s ip address. This will need to be specified on the controller-side launch to enable communication.
 
-Disable Firewall on the Windows PC, or reconfigure firewall settings to allow incoming and outgoing TCP/IP connections to the controller computer.
+2. Disable Firewall on the Windows PC, or reconfigure firewall settings to allow incoming and outgoing TCP/IP connections to the controller computer.
 
 ### “Device”
-Connect the NI PXIe-6738 (32 Channel Analog Output) module through the PiezoDrive 32 Channel HV Amplifier to the breakout adapter underneath the stage
+1. Connect the NI PXIe-6738 (32 Channel Analog Output) module through the PiezoDrive 32 Channel HV Amplifier to the breakout adapter underneath the stage
 
-Connect the Windows PC to the PXIe-8310 (PWR/LINK) module of the control box
+2. Connect the Windows PC to the PXIe-8310 (PWR/LINK) module of the control box
 
-Launch the `Test1.vi` virtual instrument to verify the LabVIEW to NI equipment connection.
-Might have to rename the module’s reference name via the NI MAX application. Error messages will alert so, if necessary
+3. Launch the `Test1.vi` virtual instrument to verify the LabVIEW to NI equipment connection.Might have to rename the module’s reference name via the NI MAX application. Error messages will alert so, if necessary
 - `C:\Users\Ping Guo\Documents\onedrive_backup\OneDrive - Northwestern University\Desktop\KojoWelbeck\ProjectEnvironment\NI VIs\Test1.vi`
 
 ### “Controller”
-Connect the Realsense camera to the controller laptop by USB
+1. Connect the Realsense camera to the controller laptop by USB
 
-Place the Puck on the bed of transducers
+2. Place the Puck on the bed of transducers
 
-Launch the RealsenseViewer or run the `Python/data_collection.py` module’s script to verify the camera's connection. The script requires that the puck be in place.
+3. Launch the RealsenseViewer or run the `Python/data_collection.py` module’s script to verify the camera's connection. The script requires that the puck be in place.
 
 ### [Optional] Data Collection Centering Attachment
-The microcontroller-based control circuit must be connected by USB to the controller-side laptop. The PORT variable of the Makefile must match the port assigned to this USB connection. Edit the makefile, recompile and write to the PIC32 (make then make write from within the `NU32/Stepper_Control directory`), if necessary.
+1. The microcontroller-based control circuit must be connected by USB to the controller-side laptop. The PORT variable of the Makefile must match the port assigned to this USB connection. Edit the makefile, recompile and write to the PIC32 (make then make write from within the `NU32/Stepper_Control directory`), if necessary.
 
 
 ## Data Collection Runtime Instructions
