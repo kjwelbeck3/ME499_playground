@@ -1,6 +1,7 @@
 # Airbending - Phased Array Near-Field Acoustic Levitation
 
-[![Floating Puck](http://img.youtube.com/vi/YOUTUBE_VIDEO_ID_HERE/0.jpg)](http://www.youtube.com/watch?v=7jeP6OGwBek "[Stitch]")
+[![Floating Puck](media/stitch.gif)](http://www.youtube.com/watch?v=7jeP6OGwBek "[Stitch]")
+[Click to Play Video]
 
 This project seeks to levitate and drive silicon wafers by controlling the phase shift patterns applied to a gridded matrix of ultrasonic acoustic sensors. 
 
